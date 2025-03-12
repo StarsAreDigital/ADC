@@ -13,11 +13,11 @@ module JERICALLA (
 	wire [31:0] w2;
 	wire [31:0] w3;
 	
-	assign EN = in[16];
-	assign dir1 = in[15:12];
-	assign dir2 = in[11:8];
-	assign op = in[7:4];
-	assign dirR = in[3:0];
+	assign EN = in[0];
+	assign dir1 = in[4:1];
+	assign dir2 = in[8:5];
+	assign op = in[12:9];
+	assign dirR = in[16:13];
 	
 	ROM rom(.dir1(dir1), .dir2(dir2), .data1(w1), .data2(w2));
 	ALU alu(.A(w1), .B(w2), .op(op), .R(w3), .ZF(ZF));
