@@ -35,7 +35,7 @@ module Tejuino (
 
 	ALU alu(.A(dem_out0), .B(b1_DR2), .op(b1_op), .R(alu_R), .ZF(alu_ZF));
 	BR regs(.RA1(RS1), .RA2(RS2), .WA(b2_WA), .DW(b2_alu), .WE(b2_WE), .DR1(br_DR1), .DR2(br_DR2));
-	RAM ram(.R(b2_R), .W(b2_W), .address(b2_WA), .data_in(b2_data), .data_out(out));
+	RAM ram(.R(b2_R), .W(b2_W), .address(b2_demux), .data_in(b2_data), .data_out(out));
 	Control ctrl(.ctrl(opcode), .R(ctrl_R), .W(ctrl_W), .demux(ctrl_demux), .op(ctrl_op), .WE(ctrl_WE));
 	Demux dem(.select(b1_demux), .in(b1_DR1), .out_0(dem_out0), .out_1(dem_out1));
 	Buffer1 buff1(
@@ -63,7 +63,7 @@ module Tejuino (
 		.i_W(b1_W),
 		.i_WE(b1_WE),
 		.i_demux(dem_out1),
-		.i_data(b1_DR1),
+		.i_data(b1_DR2),
 		.i_alu(alu_R),
 		.i_WA(b1_WA),
 		.o_R(b2_R),
