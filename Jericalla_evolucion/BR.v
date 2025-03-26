@@ -17,10 +17,9 @@ module BR (
 		if (WE) begin
 			mem[WA] = DW;
 		end
-		else begin
-			DR1 = mem[RA1];
-			DR2 = mem[RA2];
-		end
+		
+		DR1 = mem[RA1];
+		DR2 = mem[RA2];
 	end
 endmodule
 
