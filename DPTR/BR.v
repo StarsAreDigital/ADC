@@ -9,14 +9,10 @@ module BR (
 );
 	reg [31:0] mem [0:31];
 
-	initial begin
-		$readmemb("datos.txt", mem);
-	end
+	initial $readmemb("datos.txt", mem);
 
 	always @(*) begin
-		if (WE) begin
-			mem[WA] = DW;
-		end
+		if (WE) mem[WA] = DW;
 		
 		DR1 = mem[RA1];
 		DR2 = mem[RA2];
