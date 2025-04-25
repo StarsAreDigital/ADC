@@ -1,5 +1,5 @@
 module Control (
-	input [6:0] ctrl,
+	input [5:0] ctrl,
 	output reg MemToReg,
 	output reg MemToRead,
 	output reg MemToWrite,
