@@ -8,10 +8,10 @@ module BR (
 	output reg [31:0] DR2
 );
 	reg [31:0] mem [0:31];
-
+	
+	initial mem[0] = 32'b0;
 	always @(*) begin
-		if (WE) mem[WA] = DW;
-		
+		if (WE && WA) mem[WA] = DW;	
 		DR1 = mem[RA1];
 		DR2 = mem[RA2];
 	end
