@@ -7,11 +7,11 @@ class App:
     selected_file: str | None = None
     instr_format = {
         "r": {
-            "pattern": re.compile(r"\w+\s+\$(?P<rd>\d+),\s*\$(?P<rs>\d+),?\s+\$(?P<rt>\d+)"),
+            "pattern": re.compile(r"\w+\s+\$(?P<rd>\d+),?\s*\$(?P<rs>\d+),?\s+\$(?P<rt>\d+)"),
             "format": "{op:06b}{rs:05b}{rt:05b}{rd:05b}00000{fnc:06b}"
         },
         "i": {
-            "pattern": re.compile(r"\w+\s+\$(?P<rt>\d+),\s*(?P<offset>\d+)\s*\(\s*\$(?P<base>\d+)\s*\)"),
+            "pattern": re.compile(r"\w+\s+\$(?P<rt>\d+),?\s*(?P<offset>\d+)\s*\(\s*\$(?P<base>\d+)\s*\)"),
             "format": "{op:06b}{base:05b}{rt:05b}{offset:016b}"
         },
         "j": {
@@ -89,6 +89,8 @@ class App:
         with open(file_path, 'r') as file:
             for idx, line in enumerate(file):
                 instruction = line.strip().partition("#")[0]
+                if not instruction:
+                    continue
                 try:
                     bin_instr = self.parse_instruction(instruction)
                     res.append(
@@ -154,8 +156,8 @@ class App:
 
         save_path = tkinter.filedialog.asksaveasfilename(
             title="Guardar como",
-            defaultextension=".txt",
-            filetypes=[("Archivos de texto", "*.txt"), ("Todos los archivos", "*.*")]
+            defaultextension=".mem",
+            filetypes=[("Archivos de memoria", "*.mem"), ("Archivos de texto", "*.txt"), ("Todos los archivos", "*.*")]
         )
 
         if not save_path:
