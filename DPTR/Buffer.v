@@ -1,11 +1,11 @@
 module Buffer #(parameter SIGW, parameter DELAY) (
-    input CLK,
-    input [SIGW - 1:0] in,
-    output reg [SIGW - 1:0] out
+    input clk_i,
+    input [SIGW - 1:0] data_i,
+    output reg [SIGW - 1:0] data_o
 );
-    reg [SIGW * (DELAY - 1) - 1:0] mem;
+    reg [SIGW * (DELAY - 1) - 1:0] memory;
 
-    always @(posedge CLK) begin
-        {out, mem} = {mem, in};
+    always @(posedge clk_i) begin
+        {data_o, memory} = {memory, data_i};
     end
 endmodule
