@@ -2,17 +2,17 @@ module DEBuffer ( // Decode/Execute
     input clk_i,
 
     // Input control signals
-    input regDst_o,
-	input branch_o,
-	input memToRead_o,
-	input memToReg_o,
-	input [1:0] aluOp_o,
-	input memToWrite_o,
-	input aluSrc_o,
-	input regWrite_o,
+    input regDst_i,
+	input branch_i,
+	input memToRead_i,
+	input memToReg_i,
+	input [1:0] aluOp_i,
+	input memToWrite_i,
+	input aluSrc_i,
+	input regWrite_i,
 
     // Input from decode stage
-    input [31:0] nextInstrAddr_o,
+    input [31:0] nextInstrAddr_i,
     input [31:0] rsData_i,
     input [31:0] rtData_i,
     input [31:0] signExtend_i,
@@ -28,7 +28,7 @@ module DEBuffer ( // Decode/Execute
 	output reg [1:0] aluOp_o,
 	output reg memToWrite_o,
 	output reg aluSrc_o,
-	output reg regWrite_o
+	output reg regWrite_o,
 
     // Output to execute stage
     output reg [31:0] nextInstrAddr_o,
@@ -42,16 +42,16 @@ module DEBuffer ( // Decode/Execute
 
     always @(posedge clk_i) begin
         // Control signals
-        regDst_o = regDst_o;
-        branch_o = branch_o;
-        memToRead_o = memToRead_o;
-        memToReg_o = memToReg_o;
-        aluOp_o = aluOp_o;
-        memToWrite_o = memToWrite_o;
-        aluSrc_o = aluSrc_o;
-        regWrite_o = regWrite_o;
+        regDst_o = regDst_i;
+        branch_o = branch_i;
+        memToRead_o = memToRead_i;
+        memToReg_o = memToReg_i;
+        aluOp_o = aluOp_i;
+        memToWrite_o = memToWrite_i;
+        aluSrc_o = aluSrc_i;
+        regWrite_o = regWrite_i;
 
-        nextInstrAddr_o = nextInstrAddr_o;
+        nextInstrAddr_o = nextInstrAddr_i;
         rsData_o = rsData_i;
         rtData_o = rtData_i;
         signExtend_o = signExtend_i;

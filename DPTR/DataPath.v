@@ -48,15 +48,16 @@ module DataPath (input clk_i);
 	    .regWrite_o(regWrite)
     );
 
-    wire [31:0] dataRead1, dataRead2, dataWrite;
+    wire [31:0] dataRead1, dataRead2, dataWriteWb;
     wire [31:0] seOut;
-    wire [4:0] writeAddrReg;
+    wire [4:0] writeAddrRegWb;
+    wire regWriteWb;
     Registers reg_bank(
         .readAddr1_i(rs),
         .readAddr2_i(rt),
-        .writeAddr_i(writeAddrReg),
-        .dataWrite_i(dataWrite), 
-        .writeEnable_i(regWrite), 
+        .writeAddr_i(writeAddrRegWb),
+        .dataWrite_i(dataWriteWb), 
+        .writeEnable_i(regWriteWb), 
         .dataRead1_o(dataRead1),
         .dataRead2_o(dataRead2)
     );
@@ -84,7 +85,7 @@ module DataPath (input clk_i);
         .regWrite_i(regWrite),
 
         // Input from decode stage
-        .nextInstrAddr_o(nextInstrAddr),
+        .nextInstrAddr_i(nextInstrAddr),
         .rsData_i(dataRead1),
         .rtData_i(dataRead2),
         .signExtend_i(seOut),
@@ -107,7 +108,7 @@ module DataPath (input clk_i);
         .rsData_o(rsDataEx),
         .rtData_o(rtDataEx),
         .signExtend_o(signExtendEx),
-        .rtAddr_o(rtaddrEx),
+        .rtAddr_o(rtAddrEx),
         .rdAddr_o(rdAddrEx),
         .funct_o(functEx)
     );
@@ -117,7 +118,7 @@ module DataPath (input clk_i);
     wire [31:0] boOut;
     wire [4:0] writeAddrRegEx;
     wire [31:0] aluB, aluResult;
-    wire [1:0] aluSel;
+    wire [3:0] aluSel;
     wire zf;
 
     MUX #(5) muxRegDst (.data0_i(rtAddrEx), .data1_i(rdAddrEx), .sel_i(regDstEx), .data_o(writeAddrRegEx));
@@ -167,6 +168,7 @@ module DataPath (input clk_i);
 
     /* Memory access stage */
     wire pcSrc;
+    wire [31:0] dataMemOut;
     assign pcSrc = branchMem & zfMem;
 
     DataMemory ram(
@@ -174,11 +176,39 @@ module DataPath (input clk_i);
         .writeEnable_i(memToWriteMem), 
         .address_i(aluResultMem),
         .dataWrite_i(rtDataMem),
-        .dataRead_o(C5)
+        .dataRead_o(dataMemOut)
     );
-    MUX muxPcSrc(.data0_i(), .data1_i(), .sel_i(pcSrc), .data_o());
+    MUX muxPcSrc(.data0_i(pcOut), .data1_i(branchAddrMem), .sel_i(pcSrc), .data_o(nextPc));
 
 
-    MUX muxMemToReg(.data0_i(C3), .data1_i(C5), .sel_i(memToReg), .data_o(C6));
+    /* Memory/Write back buffer */
+    wire memToRegWb;
+    wire [31:0] dataMemOutWb, aluResultWb;
+
+    MWBuffer mw_buf(
+        .clk_i(clk_i),
+
+        // Input control signals
+        .memToReg_i(memToRegMem),
+        .regWrite_i(regWriteMem),
+
+        // Input from memory stage
+        .dataMem_i(dataMemOut),
+        .aluResult_i(aluResultMem),
+        .writeAddrReg_i(writeAddrRegMem),
+
+        // Output control signals
+        .memToReg_o(memToRegWb),
+        .regWrite_o(regWriteWb),
+
+        // Output to write back stage
+        .dataMem_o(dataMemOutWb),
+        .aluResult_o(aluResultWb),
+        .writeAddrReg_o(writeAddrRegWb)
+    );
+
+
+    /* Write back stage */
+    MUX muxMemToReg(.data0_i(aluResultWb), .data1_i(dataMemOutWb), .sel_i(memToRegWb), .data_o(dataWriteWb));
 
 endmodule
