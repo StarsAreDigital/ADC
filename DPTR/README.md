@@ -1,0 +1,19 @@
+## Implemented
+- add
+- sub
+- and
+- or
+- slt
+- nop
+- sw
+- lw
+- beq
+
+## TODO
+- bneq
+- addi
+- subi
+- andi
+- ori
+- slti
+- j
