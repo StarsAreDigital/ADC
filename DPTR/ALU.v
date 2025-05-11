@@ -18,6 +18,6 @@ module ALU (
 			4'b1100: res_o = ~(a_i | b_i);
 			default: res_o = 32'b0;
 		endcase
-		zf_o = res_o == 32'b0;	
+		zf_o = res_o == 32'b0; 
 	end
 endmodule

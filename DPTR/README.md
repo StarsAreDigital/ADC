@@ -11,9 +11,4 @@
 
 ## TODO
 - bneq
-- addi
-- subi
-- andi
-- ori
-- slti
 - j

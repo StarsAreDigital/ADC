@@ -31,11 +31,11 @@ module DataPath (input clk_i);
     wire [5:0] funct;
     wire [15:0] immediate;
     assign {op, rs, rt, rd, shamt, funct} = instrOut;
-    assign immediate = instr[15:0];
+    assign immediate = instrOut[15:0];
 
     // Control signals
     wire memToReg, memToRead, memToWrite, regWrite, regDst, branch, aluSrc;
-    wire [1:0] aluOp;
+    wire [3:0] aluOp;
     Control ctrl(
         .ctrl_i(op), 
 	    .regDst_o(regDst),
@@ -66,7 +66,7 @@ module DataPath (input clk_i);
 
     /* Decode/Execute buffer */
     wire memToRegEx, memToReadEx, memToWriteEx, regWriteEx, regDstEx, branchEx, aluSrcEx;
-    wire [1:0] aluOpEx;
+    wire [3:0] aluOpEx;
     wire [31:0] nextInstrAddrEx, rsDataEx, rtDataEx, signExtendEx;
     wire [4:0] rtAddrEx, rdAddrEx;
     wire [5:0] functEx;

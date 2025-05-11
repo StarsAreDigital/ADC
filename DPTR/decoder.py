@@ -11,7 +11,11 @@ class App:
             "format": "{op:06b}{rs:05b}{rt:05b}{rd:05b}00000{fnc:06b}"
         },
         "i": {
-            "pattern": re.compile(r"\w+\s+\$(?P<rt>\d+),?\s*(?P<offset>\d+)\s*\(\s*\$(?P<base>\d+)\s*\)"),
+            "pattern": re.compile(r"\w+\s+\$(?P<rt>\d+),?\s*\$(?P<rs>\d+),?\s+(?P<immediate>-?\d+)"),
+            "format": "{op:06b}{rs:05b}{rt:05b}{immediate:016b}"
+        },
+        "i2": {
+            "pattern": re.compile(r"\w+\s+\$(?P<rt>\d+),?\s*(?P<offset>-?\d+)\s*\(\s*\$(?P<base>\d+)\s*\)"),
             "format": "{op:06b}{base:05b}{rt:05b}{offset:016b}"
         },
         "j": {
@@ -20,7 +24,7 @@ class App:
         },
         "nop": {
             "pattern": re.compile(r"\w+"),
-            "format": "00000000000000000000000000000000"
+            "format": "0" * 32
         }
     }
 
@@ -53,12 +57,32 @@ class App:
         "nop": {
             "instr_type": "nop",
         },
-        "sw": {
+        "addi": {
             "instr_type": "i",
+            "op": 0b001000
+        },
+        "andi": {
+            "instr_type": "i",
+            "op": 0b001100
+        },
+        "ori": {
+            "instr_type": "i",
+            "op": 0b001101
+        },
+        "slti": {
+            "instr_type": "i",
+            "op": 0b001010
+        },
+        "beq": {
+            "instr_type": "i",
+            "op": 0b000100
+        },
+        "sw": {
+            "instr_type": "i2",
             "op": 0b101011
         },
         "lw": {
-            "instr_type": "i",
+            "instr_type": "i2",
             "op": 0b100011
         },
         "j": {
@@ -87,24 +111,68 @@ class App:
     def decode_file(self, file_path) -> list:
         res = []
         with open(file_path, 'r') as file:
-            for idx, line in enumerate(file):
-                instruction = line.strip().partition("#")[0]
-                if not instruction:
-                    continue
-                try:
-                    bin_instr = self.parse_instruction(instruction)
+            lines = file.readlines()
+        try:
+            for idx, line in enumerate(lines):
+                    line = self.preprocess_line(line)
+                    if not line: continue
+                    bin_instr = self.parse_instruction(line)
                     res.append(
                         bin_instr[0:8] + " " +
                         bin_instr[8:16] + " " +
                         bin_instr[16:24] + " " +
                         bin_instr[24:32]
                     )
-                except ValueError as e:
-                    tkinter.messagebox.showerror("Error", f"Error en la línea {idx + 1}: {e}")
-                    return None
+        except ValueError as e:
+            tkinter.messagebox.showerror("Error", f"Error en la línea {idx + 1}: {e}")
+            return None
         return res
 
-                
+    def register_alias(self, match) -> str:
+        reg_alias = {
+            "$zero": 0,
+            "$at": 1,
+            "$v0": 2,
+            "$v1": 3,
+            "$a0": 4,
+            "$a1": 5,
+            "$a2": 6,
+            "$a3": 7,
+            "$t0": 8,
+            "$t1": 9,
+            "$t2": 10,
+            "$t3": 11,
+            "$t4": 12,
+            "$t5": 13,
+            "$t6": 14,
+            "$t7": 15,
+            "$s0": 16,
+            "$s1": 17,
+            "$s2": 18,
+            "$s3": 19,
+            "$s4": 20,
+            "$s5": 21,
+            "$s6": 22,
+            "$s7": 23,
+            "$t8": 24,
+            "$t9": 25,
+            "$k0": 26,
+            "$k1": 27,
+            "$gp": 28,
+            "$sp": 29,
+            "$fp": 30,
+            "$s8": 30,
+            "$ra": 31
+        }
+        match = match.group(0)
+        return "$" + str(reg_alias.get(match, match))
+
+
+    def preprocess_line(self, line) -> str:
+        line = line.strip().partition("#")[0]
+        return re.sub(r"\$\w+\d?", self.register_alias, line)
+
+
     def parse_instruction(self, instruction) -> str:
         find_instr = r'(\w+).*'
         instr_match = re.match(find_instr, instruction)
@@ -128,7 +196,10 @@ class App:
         
         groups = match.groupdict()
         for key in groups:
-            groups[key] = int(groups[key])
+            number = int(groups[key])
+            if number < 0:
+                number = int.from_bytes(number.to_bytes(2, 'big', signed=True), 'big')
+            groups[key] = number
 
         groups.update(decode)
 
