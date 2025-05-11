@@ -29,6 +29,7 @@ module EMBuffer ( // Execute/Memory Access
     output reg [31:0] rtData_o,
     output reg [4:0] writeAddrReg_o
 );
+    initial zf_o = 1'b0;
     always @(posedge clk_i) begin
         branch_o = branch_i;
         memToRead_o = memToRead_i;

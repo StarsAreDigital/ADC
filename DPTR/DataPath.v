@@ -169,7 +169,7 @@ module DataPath (input clk_i);
     /* Memory access stage */
     wire pcSrc;
     wire [31:0] dataMemOut;
-    assign pcSrc = branchMem & zfMem;
+    assign pcSrc = zfMem & branchMem;
 
     DataMemory ram(
         .readEnable_i(memToReadMem),

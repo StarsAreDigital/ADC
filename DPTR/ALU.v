@@ -5,8 +5,7 @@ module ALU (
 	output reg [31:0] res_o,
 	output reg zf_o
 );
-	
-	assign zf_o = res_o == 32'b0;
+	initial zf_o = 1'b0;
 	
 	always @(*)
 	begin
@@ -19,5 +18,6 @@ module ALU (
 			4'b1100: res_o = ~(a_i | b_i);
 			default: res_o = 32'b0;
 		endcase
+		zf_o = res_o == 32'b0;	
 	end
 endmodule
