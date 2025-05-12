@@ -11,7 +11,7 @@ class App:
             "format": "{op:06b}{rs:05b}{rt:05b}{rd:05b}00000{fnc:06b}"
         },
         "i": {
-            "pattern": re.compile(r"\w+\s+\$(?P<rt>\d+),?\s*\$(?P<rs>\d+),?\s+(?P<immediate>-?\d+)"),
+            "pattern": re.compile(r"\w+\s+\$(?P<rt>\d+),?\s*\$(?P<rs>\d+),?\s+(?P<immediate>-?\d+|[a-zA-Z]\w*)"),
             "format": "{op:06b}{rs:05b}{rt:05b}{immediate:016b}"
         },
         "i2": {
@@ -19,7 +19,7 @@ class App:
             "format": "{op:06b}{base:05b}{rt:05b}{offset:016b}"
         },
         "j": {
-            "pattern": re.compile(r"\w+\s+(?P<instr_index>\d+)"),
+            "pattern": re.compile(r"\w+\s+(?P<instr_index>\d+|[a-zA-Z]\w*)"),
             "format": "{op:06b}{instr_index:026b}"
         },
         "nop": {
@@ -107,22 +107,58 @@ class App:
 
         self.root.mainloop()
 
+    def find_labels(self, lines):
+        """Scan the code for labels and their positions"""
+        labels = {}
+        instr_count = 0
+        
+        for line in lines:
+            line = line.strip().partition("#")[0]  # Remove comments
+            if not line: continue
+            
+            label_match = re.match(r'([a-zA-Z]\w*):(?:\s*)(.*)', line)
+            if label_match:
+                label_name = label_match.group(1)
+                labels[label_name] = instr_count
+                
+                # If there's an instruction on the same line after the label,
+                # count it as an instruction
+                if label_match.group(2).strip():
+                    instr_count += 1
+            else:
+                instr_count += 1
+                
+        return labels
 
     def decode_file(self, file_path) -> list:
         res = []
         with open(file_path, 'r') as file:
             lines = file.readlines()
+        
+        labels = self.find_labels(lines)
+        
         try:
+            instr_count = 0
             for idx, line in enumerate(lines):
-                    line = self.preprocess_line(line)
-                    if not line: continue
-                    bin_instr = self.parse_instruction(line)
-                    res.append(
-                        bin_instr[0:8] + " " +
-                        bin_instr[8:16] + " " +
-                        bin_instr[16:24] + " " +
-                        bin_instr[24:32]
-                    )
+                line = self.preprocess_line(line)
+                if not line: continue
+                
+                # Extract instruction if line contains a label
+                label_match = re.match(r'[a-zA-Z]\w*:(?:\s*)(.*)', line)
+                if label_match:
+                    instr = label_match.group(1).strip()
+                    if not instr: continue  # Skip if there's only a label with no instruction
+                    line = instr
+                
+                bin_instr = self.parse_instruction(line, instr_count, labels)
+                res.append(
+                    bin_instr[0:8] + " " +
+                    bin_instr[8:16] + " " +
+                    bin_instr[16:24] + " " +
+                    bin_instr[24:32]
+                )
+                instr_count += 1
+                
         except ValueError as e:
             tkinter.messagebox.showerror("Error", f"Error en la línea {idx + 1}: {e}")
             return None
@@ -167,13 +203,11 @@ class App:
         match = match.group(0)
         return "$" + str(reg_alias.get(match, match))
 
-
     def preprocess_line(self, line) -> str:
         line = line.strip().partition("#")[0]
         return re.sub(r"\$\w+\d?", self.register_alias, line)
 
-
-    def parse_instruction(self, instruction) -> str:
+    def parse_instruction(self, instruction, current_pc, labels) -> str:
         find_instr = r'(\w+).*'
         instr_match = re.match(find_instr, instruction)
         if not instr_match:
@@ -195,6 +229,24 @@ class App:
             raise ValueError("Formato de instrucción no válido")
         
         groups = match.groupdict()
+        
+        # Handle labels for branch and jump instructions
+        if instr_lower == "beq" and not str(groups["immediate"]).lstrip("-").isdigit():
+            label = groups["immediate"]
+            if label not in labels:
+                raise ValueError(f"Label '{label}' no encontrada")
+            
+            # Calculate branch offset (label_address - pc - 1)
+            offset = labels[label] - (current_pc + 1)
+            groups["immediate"] = offset
+            
+        elif instr_lower == "j" and not str(groups["instr_index"]).isdigit():
+            label = groups["instr_index"]
+            if label not in labels:
+                raise ValueError(f"Label '{label}' no encontrada")
+            
+            groups["instr_index"] = labels[label]
+            
         for key in groups:
             number = int(groups[key])
             if number < 0:
@@ -202,9 +254,7 @@ class App:
             groups[key] = number
 
         groups.update(decode)
-
         return instr_type["format"].format_map(groups)
-                           
 
     def select_file(self):
         file_path = tkinter.filedialog.askopenfilename(
@@ -218,7 +268,6 @@ class App:
         else:
             self.selected_file_label.config(text="Ningún archivo seleccionado")
             self.selected_file = None
-
 
     def save_file(self):
         if not self.selected_file:
