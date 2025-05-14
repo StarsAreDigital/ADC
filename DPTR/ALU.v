@@ -16,6 +16,7 @@ module ALU (
 			4'b0110: res_o = a_i - b_i;
 			4'b0111: res_o = a_i < b_i ? 32'b1 : 32'b0;
 			4'b1100: res_o = ~(a_i | b_i);
+			4'b1101: res_o = a_i ^ b_i;
 			default: res_o = 32'b0;
 		endcase
 		zf_o = res_o == 32'b0; 

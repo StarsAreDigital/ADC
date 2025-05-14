@@ -22,5 +22,3 @@
 - srl
 - rotl
 - rotr
-- xor
-- xori

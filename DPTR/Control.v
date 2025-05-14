@@ -61,6 +61,16 @@ module Control (
 				branch_o = 1'b0;
 				aluOp_o = 4'b0110;
 			end
+			6'b001110: begin // xori
+				regDst_o = 1'b0;
+				aluSrc_o = 1'b1;
+				memToReg_o = 1'b0;
+				regWrite_o = 1'b1;
+				memToRead_o = 1'b0;
+				memToWrite_o = 1'b0;
+				branch_o = 1'b0;
+				aluOp_o = 4'b0111;
+			end
 			6'b100011: begin // lw
 				regDst_o = 1'b0;
 				aluSrc_o = 1'b1;
