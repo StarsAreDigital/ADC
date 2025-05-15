@@ -3,10 +3,12 @@
 - sub
 - and
 - or
+- xor
 - slt
 - addi
 - andi
 - ori
+- xori
 - slti
 - nop
 - sw

@@ -51,7 +51,11 @@ class App:
         },
         "or": {
             "instr_type": "r",
-            "fnc": 0b100101      
+            "fnc": 0b100101
+        },
+        "xor": {
+            "instr_type": "r",
+            "fnc": 0b100110
         },
         "and": {
             "instr_type": "r",
@@ -86,6 +90,10 @@ class App:
         "ori": {
             "instr_type": "i",
             "op": 0b001101
+        },
+        "xori": {
+            "instr_type": "i",
+            "op": 0b001110
         },
         "slti": {
             "instr_type": "i",
