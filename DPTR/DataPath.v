@@ -30,21 +30,25 @@ module DataPath (input clk_i);
     wire [4:0] shamt;
     wire [5:0] funct;
     wire [15:0] immediate;
+    wire [25:0] jumpAddr;
     wire rotation;
     assign {op, rs, rt, rd, shamt, funct} = instrOut;
     assign immediate = instrOut[15:0];
-    assign rotation = instrOut[21]; 
+    assign rotation = instrOut[21];
+    assign jumpAddr = instrOut[25:0];
 
     // Control signals
-    wire memToReg, memToRead, memToWrite, regWrite, regDst, branch;
+    wire memToReg, memToRead, memToWrite, regWrite, regDst, jump;
     wire aluSrcA, aluSrcB;
+    wire [1:0] branchType;
     wire [3:0] aluOp;
     Control ctrl(
         .ctrl_i(op),
         .funct_i(funct),
         .rotation_i(rotation),
 	    .regDst_o(regDst),
-	    .branch_o(branch),
+	    .branchType_o(branchType),
+        .jump_o(jump),
 	    .memToRead_o(memToRead),
 	    .memToReg_o(memToReg),
 	    .aluOp_o(aluOp),
@@ -71,20 +75,23 @@ module DataPath (input clk_i);
 
 
     /* Decode/Execute buffer */
-    wire memToRegEx, memToReadEx, memToWriteEx, regWriteEx, regDstEx, branchEx;
+    wire memToRegEx, memToReadEx, memToWriteEx, regWriteEx, regDstEx, jumpEx;
     wire aluSrcAEx, aluSrcBEx;
+    wire [1:0] branchTypeEx;
     wire [3:0] aluOpEx;
     wire [31:0] nextInstrAddrEx, rsDataEx, rtDataEx, signExtendEx;
     wire [4:0] rtAddrEx, rdAddrEx;
     wire [5:0] functEx;
     wire [4:0] shamtEx;
+    wire [25:0] jumpAddrEx;
 
     DEBuffer de_buf(
         .clk_i(clk_i),
 
         // Input control signals
         .regDst_i(regDst),
-        .branch_i(branch),
+        .branchType_i(branchType),
+        .jump_i(jump),
         .memToRead_i(memToRead),
         .memToReg_i(memToReg),
         .aluOp_i(aluOp),
@@ -102,10 +109,12 @@ module DataPath (input clk_i);
         .rdAddr_i(rd),
         .funct_i(funct),
         .shamt_i(shamt),
+        .jumpAddr_i(jumpAddr),
 
         // Output control signals
         .regDst_o(regDstEx),
-        .branch_o(branchEx),
+        .branchType_o(branchTypeEx),
+        .jump_o(jumpEx),
         .memToRead_o(memToReadEx),
         .memToReg_o(memToRegEx),
         .aluOp_o(aluOpEx),
@@ -122,18 +131,26 @@ module DataPath (input clk_i);
         .rtAddr_o(rtAddrEx),
         .rdAddr_o(rdAddrEx),
         .funct_o(functEx),
-        .shamt_o(shamtEx)
+        .shamt_o(shamtEx),
+        .jumpAddr_o(jumpAddrEx)
     );
 
 
     /* Execute stage */
+    wire [31:0] fullJumpAddr;
     wire [31:0] boOut;
     wire [4:0] writeAddrRegEx;
     wire [31:0] shamtExtended;
     wire [31:0] aluA, aluB, aluResult;
     wire [3:0] aluSel;
-    wire zf;
+    wire zf, sign;
     assign shamtExtended = {27'b0, shamtEx};
+
+    JumpOffset jo(
+        .jumpAddr_i(jumpAddrEx),
+        .pcAlign_i(nextInstrAddrEx[31:28]),
+        .jumpAddr_o(fullJumpAddr)
+    );
 
     MUX #(5) muxRegDst (.data0_i(rtAddrEx), .data1_i(rdAddrEx), .sel_i(regDstEx), .data_o(writeAddrRegEx));
 
@@ -142,52 +159,64 @@ module DataPath (input clk_i);
 
     BranchOffset branchOffset(.pc_i(nextInstrAddrEx), .offset_i(signExtendEx), .pc_o(boOut));
     ALUControl aluCtrl(.aluOp_i(aluOpEx), .funct_i(functEx), .sel_o(aluSel));
-    ALU alu(.a_i(aluA), .b_i(aluB), .op_i(aluSel), .res_o(aluResult), .zf_o(zf));
+    ALU alu(.a_i(aluA), .b_i(aluB), .op_i(aluSel), .res_o(aluResult), .zf_o(zf), .sign_o(sign));
 
 
     /* Execute/Memory buffer */
-    wire branchMem, memToReadMem, memToRegMem, memToWriteMem, regWriteMem, zfMem;
-    wire [31:0] branchAddrMem, aluResultMem, rtDataMem;
+    wire memToReadMem, memToRegMem, memToWriteMem, regWriteMem, zfMem, signMem, jumpMem;
+    wire [1:0] branchTypeMem;
+    wire [31:0] branchAddrMem, aluResultMem, rtDataMem, jumpAddrMem;
     wire [4:0] writeAddrRegMem;
 
     EMBuffer em_buf(
         .clk_i(clk_i),
 
         // Input control signals
-        .branch_i(branchEx),
+        .branchType_i(branchTypeEx),
+        .jump_i(jumpEx),
         .memToRead_i(memToReadEx),
         .memToReg_i(memToRegEx),
         .memToWrite_i(memToWriteEx),
         .regWrite_i(regWriteEx),
         .zf_i(zf),
+        .sign_i(sign),
 
         // Input from execute stage
         .branchAddr_i(boOut),
         .aluResult_i(aluResult),
         .rtData_i(rtDataEx),
         .writeAddrReg_i(writeAddrRegEx),
+        .jumpAddr_i(fullJumpAddr),
 
         // Output control signals
-        .branch_o(branchMem),
+        .branchType_o(branchTypeMem),
+        .jump_o(jumpMem),
         .memToRead_o(memToReadMem),
         .memToReg_o(memToRegMem),
         .memToWrite_o(memToWriteMem),
         .regWrite_o(regWriteMem),
         .zf_o(zfMem),
+        .sign_o(signMem),
 
         // Output to memory stage
         .branchAddr_o(branchAddrMem),
         .aluResult_o(aluResultMem),
         .rtData_o(rtDataMem),
-        .writeAddrReg_o(writeAddrRegMem)
+        .writeAddrReg_o(writeAddrRegMem),
+        .jumpAddr_o(jumpAddrMem)
     );
 
 
     /* Memory access stage */
     wire pcSrc;
-    wire [31:0] dataMemOut;
-    assign pcSrc = zfMem & branchMem;
+    wire [31:0] dataMemOut, muxBranchOut;
 
+    BranchControl branchCtrl(
+        .branchType_i(branchTypeMem),
+        .zf_i(zfMem),
+        .sign_i(signMem),
+        .branch_o(pcSrc)
+    );
     DataMemory ram(
         .readEnable_i(memToReadMem),
         .writeEnable_i(memToWriteMem), 
@@ -195,7 +224,8 @@ module DataPath (input clk_i);
         .dataWrite_i(rtDataMem),
         .dataRead_o(dataMemOut)
     );
-    MUX muxPcSrc(.data0_i(pcOut), .data1_i(branchAddrMem), .sel_i(pcSrc), .data_o(nextPc));
+    MUX muxPcSrcBranch(.data0_i(pcOut), .data1_i(branchAddrMem), .sel_i(pcSrc), .data_o(muxBranchOut));
+    MUX muxPcSrcJump(.data0_i(muxBranchOut), .data1_i(jumpAddrMem), .sel_i(jumpMem), .data_o(nextPc));
 
 
     /* Memory/Write back buffer */

@@ -18,6 +18,10 @@ class App:
             "pattern": re.compile(r"\w+\s+\$(?P<rt>\d+),?\s*(?P<offset>-?\d+)\s*\(\s*\$(?P<base>\d+)\s*\)"),
             "format": "{op:06b}{base:05b}{rt:05b}{offset:016b}"
         },
+        "bgtz": {
+            "pattern": re.compile(r"\w+\s+\$(?P<rs>\d+),?\s+(?P<immediate>-?\d+|[a-zA-Z]\w*)"),
+            "format": "{op:06b}{rs:05b}00000{immediate:016b}"
+        },
         "j": {
             "pattern": re.compile(r"\w+\s+(?P<instr_index>\d+|[a-zA-Z]\w*)"),
             "format": "{op:06b}{instr_index:026b}"
@@ -90,6 +94,14 @@ class App:
         "beq": {
             "instr_type": "i",
             "op": 0b000100
+        },
+        "bne": {
+            "instr_type": "i",
+            "op": 0b000101
+        },
+        "bgtz": {
+            "instr_type": "bgtz",
+            "op": 0b000111
         },
         "sw": {
             "instr_type": "i2",
@@ -245,7 +257,7 @@ class App:
         groups = match.groupdict()
         
         # Handle labels for branch and jump instructions
-        if instr_lower == "beq" and not str(groups["immediate"]).lstrip("-").isdigit():
+        if instr_lower in {"beq", "bne", "bgtz"} and not str(groups["immediate"]).lstrip("-").isdigit():
             label = groups["immediate"]
             if label not in labels:
                 raise ValueError(f"Label '{label}' no encontrada")
@@ -254,7 +266,7 @@ class App:
             offset = labels[label] - (current_pc + 1)
             groups["immediate"] = offset
             
-        elif instr_lower == "j" and not str(groups["instr_index"]).isdigit():
+        elif instr_lower in {"j"} and not str(groups["instr_index"]).isdigit():
             label = groups["instr_index"]
             if label not in labels:
                 raise ValueError(f"Label '{label}' no encontrada")

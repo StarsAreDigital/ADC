@@ -15,8 +15,6 @@
 - sll
 - srl
 - rotr
-
-## TODO
-- bneq
-- bgtz
 - j
+- bne
+- bgtz

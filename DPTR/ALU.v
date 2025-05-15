@@ -3,10 +3,12 @@ module ALU (
 	input [31:0] b_i,
 	input [3:0] op_i,
 	output reg [31:0] res_o,
-	output reg zf_o
+	output zf_o,
+	output sign_o
 );
-	initial zf_o = 1'b0;
-	
+	assign zf_o = res_o == 32'b0;
+	assign sign_o = res_o[31];
+
 	always @(*)
 	begin
 		case (op_i)
@@ -22,6 +24,5 @@ module ALU (
 			4'b1100: res_o = ~(a_i | b_i);
 			default: res_o = 32'b0;
 		endcase
-		zf_o = res_o == 32'b0; 
 	end
 endmodule

@@ -3,7 +3,8 @@ module DEBuffer ( // Decode/Execute
 
     // Input control signals
     input regDst_i,
-	input branch_i,
+	input [1:0] branchType_i,
+    input jump_i,
 	input memToRead_i,
 	input memToReg_i,
 	input [3:0] aluOp_i,
@@ -21,10 +22,12 @@ module DEBuffer ( // Decode/Execute
     input [4:0] rdAddr_i,
     input [5:0] funct_i,
     input [4:0] shamt_i,
+    input [25:0] jumpAddr_i,
 
     // Output control signals
 	output reg regDst_o,
-	output reg branch_o,
+	output reg [1:0] branchType_o,
+    output reg jump_o,
 	output reg memToRead_o,
 	output reg memToReg_o,
 	output reg [3:0] aluOp_o,
@@ -41,13 +44,16 @@ module DEBuffer ( // Decode/Execute
     output reg [4:0] rtAddr_o,
     output reg [4:0] rdAddr_o,
     output reg [5:0] funct_o,
-    output reg [4:0] shamt_o
+    output reg [4:0] shamt_o,
+    output reg [25:0] jumpAddr_o
 );
-
+    initial branchType_o = 2'b0;
+    initial jump_o = 1'b0;
     always @(posedge clk_i) begin
         // Control signals
         regDst_o = regDst_i;
-        branch_o = branch_i;
+        branchType_o = branchType_i;
+        jump_o = jump_i;
         memToRead_o = memToRead_i;
         memToReg_o = memToReg_i;
         aluOp_o = aluOp_i;
@@ -64,6 +70,7 @@ module DEBuffer ( // Decode/Execute
         rdAddr_o = rdAddr_i;
         funct_o = funct_i;
         shamt_o = shamt_i;
+        jumpAddr_o = jumpAddr_i;
     end
     
 endmodule

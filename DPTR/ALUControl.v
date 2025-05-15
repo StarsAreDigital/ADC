@@ -6,7 +6,7 @@ module ALUControl (
     always @(*) begin
         case (aluOp_i)
             4'b0000: sel_o = 4'b0010; // lw, sw
-            4'b0001: sel_o = 4'b0110; // beq
+            4'b0001: sel_o = 4'b0110; // beq, bne, bgtz
             4'b0010: case (funct_i)   // type r
                 6'b100000: sel_o = 4'b0010; // add
                 6'b100010: sel_o = 4'b0110; // sub
