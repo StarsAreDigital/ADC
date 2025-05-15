@@ -8,7 +8,7 @@ class App:
     instr_format = {
         "r": {
             "pattern": re.compile(r"\w+\s+\$(?P<rd>\d+),?\s*\$(?P<rs>\d+),?\s+\$(?P<rt>\d+)"),
-            "format": "{op:06b}{rs:05b}{rt:05b}{rd:05b}00000{fnc:06b}"
+            "format": "000000{rs:05b}{rt:05b}{rd:05b}00000{fnc:06b}"
         },
         "i": {
             "pattern": re.compile(r"\w+\s+\$(?P<rt>\d+),?\s*\$(?P<rs>\d+),?\s+(?P<immediate>-?\d+|[a-zA-Z]\w*)"),
@@ -22,6 +22,10 @@ class App:
             "pattern": re.compile(r"\w+\s+(?P<instr_index>\d+|[a-zA-Z]\w*)"),
             "format": "{op:06b}{instr_index:026b}"
         },
+        "shift": {
+            "pattern": re.compile(r"\w+\s+\$(?P<rd>\d+),?\s*\$(?P<rt>\d+),?\s+(?P<shamt>\d+)"),
+            "format": "0000000000{rotation:01b}{rt:05b}{rd:05b}{shamt:05b}{fnc:06b}"
+        },
         "nop": {
             "pattern": re.compile(r"\w+"),
             "format": "0" * 32
@@ -31,28 +35,38 @@ class App:
     instructions = {
         "add": {
             "instr_type": "r",
-            "op": 0b0,
             "fnc": 0b100000
         },
         "sub": {
             "instr_type": "r",
-            "op": 0b0,
             "fnc": 0b100010
         },
         "slt": {
             "instr_type": "r",
-            "op": 0b0,
             "fnc": 0b101010
         },
         "or": {
             "instr_type": "r",
-            "op": 0b0,
             "fnc": 0b100101      
         },
         "and": {
             "instr_type": "r",
-            "op": 0b0,
             "fnc": 0b100100
+        },
+        "sll": {
+            "instr_type": "shift",
+            "fnc": 0b000000,
+            "rotation": 0b0
+        },
+        "srl": {
+            "instr_type": "shift",
+            "fnc": 0b000010,
+            "rotation": 0b0
+        },
+        "rotr": {
+            "instr_type": "shift",
+            "fnc": 0b000010,
+            "rotation": 0b1
         },
         "nop": {
             "instr_type": "nop",

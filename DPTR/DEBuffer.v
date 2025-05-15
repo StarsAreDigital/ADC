@@ -8,7 +8,8 @@ module DEBuffer ( // Decode/Execute
 	input memToReg_i,
 	input [3:0] aluOp_i,
 	input memToWrite_i,
-	input aluSrc_i,
+    input aluSrcA_i,
+	input aluSrcB_i,
 	input regWrite_i,
 
     // Input from decode stage
@@ -19,6 +20,7 @@ module DEBuffer ( // Decode/Execute
     input [4:0] rtAddr_i,
     input [4:0] rdAddr_i,
     input [5:0] funct_i,
+    input [4:0] shamt_i,
 
     // Output control signals
 	output reg regDst_o,
@@ -27,7 +29,8 @@ module DEBuffer ( // Decode/Execute
 	output reg memToReg_o,
 	output reg [3:0] aluOp_o,
 	output reg memToWrite_o,
-	output reg aluSrc_o,
+    output reg aluSrcA_o,
+	output reg aluSrcB_o,
 	output reg regWrite_o,
 
     // Output to execute stage
@@ -37,7 +40,8 @@ module DEBuffer ( // Decode/Execute
     output reg [31:0] signExtend_o,
     output reg [4:0] rtAddr_o,
     output reg [4:0] rdAddr_o,
-    output reg [5:0] funct_o
+    output reg [5:0] funct_o,
+    output reg [4:0] shamt_o
 );
 
     always @(posedge clk_i) begin
@@ -48,7 +52,8 @@ module DEBuffer ( // Decode/Execute
         memToReg_o = memToReg_i;
         aluOp_o = aluOp_i;
         memToWrite_o = memToWrite_i;
-        aluSrc_o = aluSrc_i;
+        aluSrcA_o = aluSrcA_i;
+        aluSrcB_o = aluSrcB_i;
         regWrite_o = regWrite_i;
 
         nextInstrAddr_o = nextInstrAddr_i;
@@ -58,6 +63,7 @@ module DEBuffer ( // Decode/Execute
         rtAddr_o = rtAddr_i;
         rdAddr_o = rdAddr_i;
         funct_o = funct_i;
+        shamt_o = shamt_i;
     end
     
 endmodule
