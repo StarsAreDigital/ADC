@@ -30,21 +30,27 @@ module DataPath (input clk_i);
     wire [4:0] shamt;
     wire [5:0] funct;
     wire [15:0] immediate;
+    wire rotation;
     assign {op, rs, rt, rd, shamt, funct} = instrOut;
     assign immediate = instrOut[15:0];
+    assign rotation = instrOut[21]; 
 
     // Control signals
-    wire memToReg, memToRead, memToWrite, regWrite, regDst, branch, aluSrc;
+    wire memToReg, memToRead, memToWrite, regWrite, regDst, branch;
+    wire aluSrcA, aluSrcB;
     wire [3:0] aluOp;
     Control ctrl(
-        .ctrl_i(op), 
+        .ctrl_i(op),
+        .funct_i(funct),
+        .rotation_i(rotation),
 	    .regDst_o(regDst),
 	    .branch_o(branch),
 	    .memToRead_o(memToRead),
 	    .memToReg_o(memToReg),
 	    .aluOp_o(aluOp),
 	    .memToWrite_o(memToWrite),
-	    .aluSrc_o(aluSrc),
+        .aluSrcA_o(aluSrcA),
+	    .aluSrcB_o(aluSrcB),
 	    .regWrite_o(regWrite)
     );
 
@@ -65,11 +71,13 @@ module DataPath (input clk_i);
 
 
     /* Decode/Execute buffer */
-    wire memToRegEx, memToReadEx, memToWriteEx, regWriteEx, regDstEx, branchEx, aluSrcEx;
+    wire memToRegEx, memToReadEx, memToWriteEx, regWriteEx, regDstEx, branchEx;
+    wire aluSrcAEx, aluSrcBEx;
     wire [3:0] aluOpEx;
     wire [31:0] nextInstrAddrEx, rsDataEx, rtDataEx, signExtendEx;
     wire [4:0] rtAddrEx, rdAddrEx;
     wire [5:0] functEx;
+    wire [4:0] shamtEx;
 
     DEBuffer de_buf(
         .clk_i(clk_i),
@@ -81,7 +89,8 @@ module DataPath (input clk_i);
         .memToReg_i(memToReg),
         .aluOp_i(aluOp),
         .memToWrite_i(memToWrite),
-        .aluSrc_i(aluSrc),
+        .aluSrcA_i(aluSrcA),
+        .aluSrcB_i(aluSrcB),
         .regWrite_i(regWrite),
 
         // Input from decode stage
@@ -92,6 +101,7 @@ module DataPath (input clk_i);
         .rtAddr_i(rt),
         .rdAddr_i(rd),
         .funct_i(funct),
+        .shamt_i(shamt),
 
         // Output control signals
         .regDst_o(regDstEx),
@@ -100,7 +110,8 @@ module DataPath (input clk_i);
         .memToReg_o(memToRegEx),
         .aluOp_o(aluOpEx),
         .memToWrite_o(memToWriteEx),
-        .aluSrc_o(aluSrcEx),
+        .aluSrcA_o(aluSrcAEx),
+        .aluSrcB_o(aluSrcBEx),
         .regWrite_o(regWriteEx),
 
         // Output to execute stage
@@ -110,22 +121,28 @@ module DataPath (input clk_i);
         .signExtend_o(signExtendEx),
         .rtAddr_o(rtAddrEx),
         .rdAddr_o(rdAddrEx),
-        .funct_o(functEx)
+        .funct_o(functEx),
+        .shamt_o(shamtEx)
     );
 
 
     /* Execute stage */
     wire [31:0] boOut;
     wire [4:0] writeAddrRegEx;
-    wire [31:0] aluB, aluResult;
+    wire [31:0] shamtExtended;
+    wire [31:0] aluA, aluB, aluResult;
     wire [3:0] aluSel;
     wire zf;
+    assign shamtExtended = {27'b0, shamtEx};
 
     MUX #(5) muxRegDst (.data0_i(rtAddrEx), .data1_i(rdAddrEx), .sel_i(regDstEx), .data_o(writeAddrRegEx));
-    MUX muxAluSrc(.data0_i(rtDataEx), .data1_i(signExtendEx), .sel_i(aluSrcEx), .data_o(aluB));
+
+    MUX muxAluSrcA(.data0_i(rsDataEx), .data1_i(shamtExtended), .sel_i(aluSrcAEx), .data_o(aluA));
+    MUX muxAluSrcB(.data0_i(rtDataEx), .data1_i(signExtendEx), .sel_i(aluSrcBEx), .data_o(aluB));
+
     BranchOffset branchOffset(.pc_i(nextInstrAddrEx), .offset_i(signExtendEx), .pc_o(boOut));
     ALUControl aluCtrl(.aluOp_i(aluOpEx), .funct_i(functEx), .sel_o(aluSel));
-    ALU alu(.a_i(rsDataEx), .b_i(aluB), .op_i(aluSel), .res_o(aluResult), .zf_o(zf));
+    ALU alu(.a_i(aluA), .b_i(aluB), .op_i(aluSel), .res_o(aluResult), .zf_o(zf));
 
 
     /* Execute/Memory buffer */

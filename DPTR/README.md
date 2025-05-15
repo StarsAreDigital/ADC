@@ -12,13 +12,11 @@
 - sw
 - lw
 - beq
+- sll
+- srl
+- rotr
 
 ## TODO
 - bneq
 - bgtz
 - j
-
-- sll
-- srl
-- rotl
-- rotr

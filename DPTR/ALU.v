@@ -13,10 +13,13 @@ module ALU (
 			4'b0000: res_o = a_i & b_i;
 			4'b0001: res_o = a_i | b_i;
 			4'b0010: res_o = a_i + b_i;
+			4'b0011: res_o = a_i ^ b_i;
+			4'b0100: res_o = b_i << a_i;
+			4'b0101: res_o = b_i >> a_i;
 			4'b0110: res_o = a_i - b_i;
 			4'b0111: res_o = a_i < b_i ? 32'b1 : 32'b0;
+			4'b1001: res_o = (b_i >> a_i) | (b_i << (32'd32 - a_i)); // rotate right
 			4'b1100: res_o = ~(a_i | b_i);
-			4'b1101: res_o = a_i ^ b_i;
 			default: res_o = 32'b0;
 		endcase
 		zf_o = res_o == 32'b0; 
