@@ -7,7 +7,10 @@ module DataPathTB ();
         clk = 0;
 
         $readmemb("instructions.mem", dp.im.memory);
-        $readmemb("data.mem", dp.ram.memory);
+        $readmemh("data.mem", dp.ram.memory);
     end
     always #1 clk = ~clk;
+    always @(dp.reg_bank.memory[31]) begin
+        $stop;
+    end
 endmodule
