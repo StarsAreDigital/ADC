@@ -2,7 +2,7 @@ module InstructionMemory (
     input [31:0] address_i,
     output reg [31:0] instruction_o
 );
-    reg [7:0] memory [0:1023];
+    reg [7:0] memory [0:2047]; // 2KB
     
     always @(*) begin
         if (address_i % 4 == 0) begin

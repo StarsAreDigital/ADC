@@ -433,8 +433,8 @@ class App:
         try:
             with open(save_path, 'w') as outfile:
                 for b in data:
-                    outfile.write(bin(b)[2:].zfill(8) + ' ')
-                outfile.write('0' * 8)
+                    outfile.write(hex(b)[2:].zfill(2) + ' ')
+                outfile.write('0' * 2)
             tkinter.messagebox.showinfo("Guardado", "Archivo de datos guardado exitosamente")
         except Exception as e:
             tkinter.messagebox.showerror("Error", f"Ocurrió un error: {e}")

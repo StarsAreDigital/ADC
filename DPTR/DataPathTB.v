@@ -10,7 +10,15 @@ module DataPathTB ();
         $readmemh("data.mem", dp.ram.memory);
     end
     always #1 clk = ~clk;
+
+    integer i;
     always @(dp.reg_bank.memory[31]) begin
-        $stop;
+        if (dp.reg_bank.memory[31] == -1) begin
+            for (i = 0; i < 32; i = i + 1) begin
+                $write("%x", dp.ram.memory[i]);
+            end
+            $write("\n");
+            $stop;
+        end
     end
 endmodule
